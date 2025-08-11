@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Tệp Của Bạn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem; /* gap-6 */
+        }
+        @media (min-width: 640px) { /* sm */
+            .file-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+        @media (min-width: 1024px) { /* lg */
+            .file-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="w-full max-w-4xl bg-white shadow-lg rounded-lg p-6 sm:p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+            Quản lý Tệp của bạn
+        </h1>
+
+        <p id="message" class="mb-4 text-center text-sm"></p>
+
+        <div id="auth-section" class="space-y-6">
+            <!-- Login Form Container -->
+            <div id="login-container" class="p-4 border border-gray-200 rounded-lg shadow-sm">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Đăng nhập</h2>
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            id="login-email"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                        <input
+                            type="password"
+                            id="login-password"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out"
+                    >
+                        Đăng nhập
+                    </button>
+                </form>
+                <p class="mt-4 text-center text-gray-600">
+                    Bạn chưa có tài khoản? <a href="#" id="show-register-link" class="text-blue-600 hover:underline font-semibold">Đăng ký</a>
+                </p>
+            </div>
+
+            <!-- Register Form Container -->
+            <div id="register-container" class="p-4 border border-gray-200 rounded-lg shadow-sm hidden">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Đăng ký</h2>
+                <form id="register-form" class="space-y-4">
+                    <div>
+                        <label for="register-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            id="register-email"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label for="register-password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                        <input
+                            type="password"
+                            id="register-password"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out"
+                    >
+                        Đăng ký
+                    </button>
+                </form>
+                <p class="mt-4 text-center text-gray-600">
+                    Đã có tài khoản? <a href="#" id="show-login-link" class="text-blue-600 hover:underline font-semibold">Đăng nhập</a>
+                </p>
+            </div>
+        </div>
+
+        <div id="file-management-section" class="hidden">
+            <!-- User ID Display -->
+            <div class="text-sm text-gray-600 text-center mb-4 p-2 bg-blue-50 rounded-md">
+                ID Người dùng của bạn: <span id="user-id-display" class="font-mono text-blue-700 break-all"></span>
+            </div>
+
+            <!-- Auth Actions -->
+            <div class="flex justify-center space-x-4 mb-8">
+                <button
+                    id="change-password-btn"
+                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out"
+                >
+                    Đổi mật khẩu
+                </button>
+                <button
+                    id="logout-btn"
+                    class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out"
+                >
+                    Đăng xuất
+                </button>
+            </div>
+
+            <div id="change-password-form-container" class="hidden mb-8 p-4 border border-gray-200 rounded-lg shadow-sm">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Đổi mật khẩu</h2>
+                <form id="change-password-form" class="space-y-4">
+                    <div>
+                        <label for="new-password" class="block text-sm font-medium text-gray-700">Mật khẩu mới</label>
+                        <input
+                            type="password"
+                            id="new-password"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label for="confirm-new-password" class="block text-sm font-medium text-gray-700">Xác nhận mật khẩu mới</label>
+                        <input
+                            type="password"
+                            id="confirm-new-password"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-300 ease-in-out"
+                    >
+                        Cập nhật mật khẩu
+                    </button>
+                </form>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="mb-8 p-4 border border-dashed border-gray-300 rounded-lg text-center">
+                <label for="file-upload" class="cursor-pointer">
+                    <div class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Tải lên Tệp
+                    </div>
+                    <input
+                        type="file"
+                        id="file-upload"
+                        class="hidden"
+                    />
+                </label>
+                <div id="upload-progress-container" class="hidden mt-4 text-gray-700">
+                    Đang tải lên: <span id="upload-progress-text">0</span>%
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div id="upload-progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File List Section -->
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Các tệp của bạn</h2>
+            <p id="no-files-message" class="text-gray-500 text-center py-8 hidden">Chưa có tệp nào được tải lên. Hãy tải lên một tệp!</p>
+            <div id="file-list-container" class="file-grid">
+                <!-- Files will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for messages -->
+    <div id="modal-overlay" class="fixed inset-0 z-50 flex items-center justify-center modal-overlay hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-auto">
+            <h3 id="modal-title" class="text-lg font-bold text-gray-900 mb-4"></h3>
+            <p id="modal-body" class="text-gray-700 mb-6"></p>
+            <button
+                id="modal-close-btn"
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out"
+            >
+                Đóng
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            createUserWithEmailAndPassword,
+            updatePassword,
+            signOut,
+            onAuthStateChanged,
+            signInAnonymously, // For Canvas environment's initial auth token
+            signInWithCustomToken // For Canvas environment's initial auth token
+        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            onSnapshot,
+            doc,
+            deleteDoc,
+            query
+        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        import {
+            getStorage,
+            ref,
+            uploadBytesResumable,
+            getDownloadURL,
+            deleteObject
+        } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
+
+
+        // Firebase Configuration (from user's previous input)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB8RvLUaPKcCa6VyJKR4pdnZLPoULYrL9U",
+            authDomain: "backup-ba126.firebaseapp.com",
+            projectId: "backup-ba126",
+            storageBucket: "backup-ba126.firebasestorage.app",
+            messagingSenderId: "710403209393",
+            appId: "1:710403209393:web:aecbc507489f434baa4a90",
+            measurementId: "G-5QFCCQ80TE"
+        };
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app); // Initialize Firebase Storage
+
+        let currentUserId = null;
+        let unsubscribeFromFiles = null; // To clean up Firestore listener
+
+        // --- DOM Elements ---
+        const messageElement = document.getElementById('message');
+        const authSection = document.getElementById('auth-section');
+        const fileManagementSection = document.getElementById('file-management-section');
+        const userIdDisplay = document.getElementById('user-id-display');
+
+        const loginForm = document.getElementById('login-form');
+        const loginEmailInput = document.getElementById('login-email');
+        const loginPasswordInput = document.getElementById('login-password');
+        const loginContainer = document.getElementById('login-container'); // New
+
+        const registerForm = document.getElementById('register-form');
+        const registerEmailInput = document.getElementById('register-email');
+        const registerPasswordInput = document.getElementById('register-password');
+        const registerContainer = document.getElementById('register-container'); // New
+
+        const showRegisterLink = document.getElementById('show-register-link'); // New
+        const showLoginLink = document.getElementById('show-login-link');     // New
+
+        const changePasswordBtn = document.getElementById('change-password-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const changePasswordFormContainer = document.getElementById('change-password-form-container');
+        const changePasswordForm = document.getElementById('change-password-form');
+        const newPasswordInput = document.getElementById('new-password');
+        const confirmNewPasswordInput = document.getElementById('confirm-new-password');
+
+        const fileUploadInput = document.getElementById('file-upload');
+        const uploadProgressContainer = document.getElementById('upload-progress-container');
+        const uploadProgressBar = document.getElementById('upload-progress-bar');
+        const uploadProgressText = document.getElementById('upload-progress-text');
+        const fileListContainer = document.getElementById('file-list-container');
+        const noFilesMessage = document.getElementById('no-files-message');
+
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        // --- Utility Functions ---
+
+        function showMessage(msg, isError = false) {
+            messageElement.textContent = msg;
+            messageElement.className = `mb-4 text-center text-sm ${isError ? 'text-red-600' : 'text-green-600'}`;
+        }
+
+        function showModal(title, body) {
+            modalTitle.textContent = title;
+            modalBody.textContent = body;
+            modalOverlay.classList.remove('hidden');
+        }
+
+        function hideModal() {
+            modalOverlay.classList.add('hidden');
+        }
+
+        // --- Functions to toggle forms ---
+        function showLoginForm() {
+            loginContainer.classList.remove('hidden');
+            registerContainer.classList.add('hidden');
+            showMessage(''); // Clear messages
+        }
+
+        function showRegisterForm() {
+            loginContainer.classList.add('hidden');
+            registerContainer.classList.remove('hidden');
+            showMessage(''); // Clear messages
+        }
+
+        // --- Authentication Handlers ---
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            showMessage(''); // Clear previous messages
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showMessage('Đăng nhập thành công!');
+                loginEmailInput.value = '';
+                loginPasswordInput.value = '';
+            } catch (error) {
+                console.error("Lỗi đăng nhập:", error.code, error.message);
+                let errorMessage = "Lỗi đăng nhập. Vui lòng kiểm tra email và mật khẩu.";
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorMessage = 'Email hoặc mật khẩu không đúng.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Địa chỉ email không hợp lệ.';
+                }
+                showMessage(errorMessage, true);
+            }
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = registerEmailInput.value;
+            const password = registerPasswordInput.value;
+            showMessage(''); // Clear previous messages
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                showMessage('Đăng ký thành công! Bạn đã được đăng nhập.');
+                registerEmailInput.value = '';
+                registerPasswordInput.value = '';
+            } catch (error) {
+                console.error("Lỗi đăng ký:", error.code, error.message);
+                let errorMessage = "Lỗi đăng ký. Vui lòng thử lại.";
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = 'Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Địa chỉ email không hợp lệ.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'Mật khẩu quá yếu (ít nhất 6 ký tự).';
+                }
+                showMessage(errorMessage, true);
+            }
+        });
+
+        changePasswordBtn.addEventListener('click', () => {
+            changePasswordFormContainer.classList.toggle('hidden');
+            newPasswordInput.value = '';
+            confirmNewPasswordInput.value = '';
+            showMessage(''); // Clear messages when toggling form
+        });
+
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPass = newPasswordInput.value;
+            const confirmNewPass = confirmNewPasswordInput.value;
+            showMessage(''); // Clear previous messages
+
+            if (newPass !== confirmNewPass) {
+                showMessage('Mật khẩu mới không khớp. Vui lòng nhập lại.', true);
+                return;
+            }
+            if (newPass.length < 6) {
+                showMessage('Mật khẩu mới phải có ít nhất 6 ký tự.', true);
+                return;
+            }
+
+            try {
+                await updatePassword(auth.currentUser, newPass);
+                showMessage('Đổi mật khẩu thành công!');
+                newPasswordInput.value = '';
+                confirmNewPasswordInput.value = '';
+                changePasswordFormContainer.classList.add('hidden');
+            } catch (error) {
+                console.error("Lỗi đổi mật khẩu:", error.code, error.message);
+                let errorMessage = "Lỗi đổi mật khẩu. Vui lòng đăng nhập lại và thử lại.";
+                if (error.code === 'auth/requires-recent-login') {
+                    errorMessage = 'Để đổi mật khẩu, bạn cần đăng nhập lại gần đây. Vui lòng đăng xuất và đăng nhập lại.';
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = 'Mật khẩu quá yếu (ít nhất 6 ký tự).';
+                }
+                showMessage(errorMessage, true);
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => {
+            showMessage(''); // Clear previous messages
+            try {
+                await signOut(auth);
+                showMessage('Đã đăng xuất.');
+                if (unsubscribeFromFiles) {
+                    unsubscribeFromFiles(); // Stop listening to files
+                }
+                fileListContainer.innerHTML = ''; // Clear file list
+                noFilesMessage.classList.remove('hidden'); // Show no files message
+                changePasswordFormContainer.classList.add('hidden'); // Hide password form
+            } catch (error) {
+                console.error("Lỗi đăng xuất:", error);
+                showMessage('Lỗi khi đăng xuất. Vui lòng thử lại.', true);
+            }
+        });
+
+        // --- Event Listeners for toggling forms ---
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showRegisterForm();
+        });
+
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginForm();
+        });
+
+        // --- Firebase Auth State Change Listener ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                userIdDisplay.textContent = currentUserId;
+                authSection.classList.add('hidden');
+                fileManagementSection.classList.remove('hidden');
+                listenToFiles(); // Start listening for files
+            } else {
+                // If no user, show login form by default
+                currentUserId = null;
+                authSection.classList.remove('hidden');
+                fileManagementSection.classList.add('hidden');
+                showLoginForm(); // Ensure login form is shown
+            }
+        });
+
+        // --- File Management Functions ---
+
+        function listenToFiles() {
+            if (unsubscribeFromFiles) {
+                unsubscribeFromFiles(); // Unsubscribe from previous listener if any
+            }
+
+            const filesCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/user_files`);
+            const q = query(filesCollectionRef);
+
+            unsubscribeFromFiles = onSnapshot(q, (snapshot) => {
+                fileListContainer.innerHTML = ''; // Clear current list
+                if (snapshot.empty) {
+                    noFilesMessage.classList.remove('hidden');
+                } else {
+                    noFilesMessage.classList.add('hidden');
+                    snapshot.docs.forEach(doc => {
+                        const file = { id: doc.id, ...doc.data() };
+                        renderFileCard(file);
+                    });
+                }
+            }, (error) => {
+                console.error("Lỗi khi tải tệp:", error);
+                showMessage("Không thể tải tệp. Vui lòng thử lại.", true);
+            });
+        }
+
+        fileUploadInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Define a unique path for the file in Firebase Storage
+            const filePath = `user_uploads/${currentUserId}/${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, filePath);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadProgressContainer.classList.remove('hidden');
+            uploadProgressBar.style.width = '0%';
+            uploadProgressText.textContent = '0';
+            showMessage('Đang tải lên...');
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    uploadProgressBar.style.width = `${progress}%`;
+                    uploadProgressText.textContent = Math.round(progress);
+                },
+                (error) => {
+                    console.error("Lỗi khi tải tệp lên Storage:", error);
+                    showMessage('Lỗi khi tải tệp lên. Vui lòng thử lại.', true);
+                    uploadProgressContainer.classList.add('hidden');
+                    e.target.value = null; // Clear input
+                },
+                async () => {
+                    // Upload completed successfully, now get the download URL
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        const fileData = {
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            downloadURL: downloadURL, // Store the download URL
+                            filePath: filePath,       // Store the path in Storage for deletion
+                            timestamp: Date.now(),
+                            userId: currentUserId
+                        };
+
+                        const filesCollectionRef = collection(db, `artifacts/${appId}/users/${currentUserId}/user_files`);
+                        await addDoc(filesCollectionRef, fileData);
+                        showMessage('Tải lên thành công!');
+                    } catch (error) {
+                        console.error("Lỗi khi lưu thông tin tệp vào Firestore:", error);
+                        showMessage('Lỗi khi lưu thông tin tệp. Vui lòng thử lại.', true);
+                    } finally {
+                        uploadProgressContainer.classList.add('hidden');
+                        e.target.value = null; // Clear input
+                    }
+                }
+            );
+        });
+
+        function renderFileCard(file) {
+            const fileCard = document.createElement('div');
+            fileCard.className = "bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden flex flex-col";
+            fileCard.innerHTML = `
+                <div class="p-4 flex-grow">
+                    ${renderFilePreview(file)}
+                    <p class="text-gray-800 font-medium truncate mb-1" title="${file.name}">${file.name}</p>
+                    <p class="text-gray-600 text-sm">Loại: ${file.type}</p>
+                    <p class="text-gray-600 text-sm">Kích thước: ${(file.size / 1024).toFixed(2)} KB</p>
+                </div>
+                <div class="flex justify-between p-4 bg-gray-50 border-t border-gray-200">
+                    <button
+                        data-file-id="${file.id}"
+                        data-file-url="${file.downloadURL}"
+                        data-file-name="${file.name}"
+                        class="download-btn flex-1 mr-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out flex items-center justify-center"
+                    >
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l3-3m-3 3l-3-3m-8 1a9 9 0 1118 0H4z"></path></svg>
+                        Tải xuống
+                    </button>
+                    <button
+                        data-file-id="${file.id}"
+                        data-file-path="${file.filePath}"
+                        class="delete-btn flex-1 ml-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out flex items-center justify-center"
+                    >
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        Xóa
+                    </button>
+                </div>
+            `;
+            fileListContainer.appendChild(fileCard);
+        }
+
+        function renderFilePreview(file) {
+            // Use downloadURL directly for preview
+            if (file.type.startsWith('image/')) {
+                return `
+                    <img
+                        src="${file.downloadURL}"
+                        alt="${file.name}"
+                        class="w-full h-32 object-contain rounded-md mb-2"
+                        onerror="this.onerror=null;this.src='https://placehold.co/150x150/cccccc/333333?text=Lỗi+ảnh';"
+                    />
+                `;
+            } else if (file.type.startsWith('video/')) {
+                return `
+                    <video
+                        controls
+                        src="${file.downloadURL}"
+                        class="w-full h-32 object-contain rounded-md mb-2"
+                        onerror="this.onerror=null;this.src='https://placehold.co/150x150/cccccc/333333?text=Lỗi+video';"
+                    >
+                        Trình duyệt của bạn không hỗ trợ thẻ video.
+                    </video>
+                `;
+            } else {
+                return `
+                    <div class="w-full h-32 flex items-center justify-center bg-gray-100 rounded-md mb-2 text-gray-500 text-center p-2">
+                        <span class="break-words">${file.name}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Event delegation for download and delete buttons
+        fileListContainer.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('download-btn')) {
+                const fileURL = e.target.dataset.fileUrl;
+                const fileName = e.target.dataset.fileName;
+
+                try {
+                    const a = document.createElement('a');
+                    a.href = fileURL;
+                    a.download = fileName; // Suggests a filename for download
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showMessage('Đã tải xuống tệp thành công!');
+                } catch (error) {
+                    console.error("Lỗi khi tải xuống tệp:", error);
+                    showMessage('Lỗi khi tải xuống tệp. Vui lòng thử lại.', true);
+                }
+            } else if (e.target.classList.contains('delete-btn')) {
+                const fileId = e.target.dataset.fileId;
+                const filePath = e.target.dataset.filePath; // Get the file path from data attribute
+
+                try {
+                    // 1. Delete file from Firebase Storage
+                    const fileRef = ref(storage, filePath);
+                    await deleteObject(fileRef);
+
+                    // 2. Delete document from Firestore
+                    const fileDocRef = doc(db, `artifacts/${appId}/users/${currentUserId}/user_files`, fileId);
+                    await deleteDoc(fileDocRef);
+
+                    showMessage('Đã xóa tệp thành công!');
+                } catch (error) {
+                    console.error("Lỗi khi xóa tệp:", error);
+                    showMessage('Lỗi khi xóa tệp. Vui lòng thử lại.', true);
+                }
+            }
+        });
+
+        // Close modal button
+        modalCloseBtn.addEventListener('click', hideModal);
+
+        // Initial check for authentication state
+        // This will be handled by onAuthStateChanged listener
+    </script>
+</body>
+</html>
